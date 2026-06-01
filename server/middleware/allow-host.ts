@@ -1,4 +1,23 @@
-import { defineEventHandler, setHeader, getHeader, getRequestURL } from "h3";
+import {
+  defineEventHandler,
+  getHeader,
+  getRequestURL,
+  sendStream,
+  setHeader,
+} from "h3";
+import { createReadStream, existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
+const getImageContentType = (imagePath: string) => {
+  const header = readFileSync(imagePath, { encoding: "ascii", flag: "r" }).slice(
+    0,
+    32
+  );
+
+  if (header.includes("ftypavif")) return "image/avif";
+  if (header.startsWith("RIFF") && header.includes("WEBP")) return "image/webp";
+  return "image/webp";
+};
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig();
@@ -46,17 +65,17 @@ export default defineEventHandler(async (event) => {
   const allowed = hostAllowed && refererAllowed;
 
   if (!allowed) {
-    const response = await fetch("https://36f02096.pinit.eth.limo");
-    if (!response.ok) {
-      // 如果外部图片加载失败，你可以返回 404 或 500
+    const imagePath = join(process.cwd(), "public", "403.webp");
+
+    if (!existsSync(imagePath)) {
       throw createError({
         statusCode: 404,
-        statusMessage: "Placeholder image not found",
+        statusMessage: "403 image not found",
       });
     }
-    // ❌ 不允许访问：返回占位图，或者你也可以直接 403
-    setHeader(event, "Content-Type", "image/webp");
+
+    setHeader(event, "Content-Type", getImageContentType(imagePath));
     setHeader(event, "Cache-Control", "public, max-age=0");
-    return sendStream(event, response.body as ReadableStream);
+    return sendStream(event, createReadStream(imagePath));
   }
 });
