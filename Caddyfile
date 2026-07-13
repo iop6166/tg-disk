@@ -1,0 +1,15 @@
+616691887.xyz {
+    reverse_proxy localhost:3000
+
+    # 上传文件大小限制提升到 2GB
+    request_body {
+        max_size 2GB
+    }
+
+    # 压缩响应
+    encode gzip zstd
+
+    # 静态资源缓存
+    header /style.css Cache-Control "public, max-age=3600"
+    header /app.js Cache-Control "public, max-age=3600"
+}

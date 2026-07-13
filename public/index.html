@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <title>Telegram 云盘管理系统</title>
+  <link rel="stylesheet" href="style.css?v=20260709">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
+</head>
+<body>
+  <div id="app">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo">☁️</span>
+        <h1>TG 云盘</h1>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-view="files">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span>我的云盘</span>
+        </a>
+        <a href="#" class="nav-item" data-view="channel">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>频道浏览</span>
+        </a>
+        <a href="#" class="nav-item" data-view="recent">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>最近上传</span>
+        </a>
+        <a href="#" class="nav-item" data-view="stats">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>存储统计</span>
+        </a>
+        <a href="#" class="nav-item" data-view="settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>设置</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="storage-info" id="storageInfo">
+          <div class="storage-bar">
+            <div class="storage-fill" style="width: 0%"></div>
+          </div>
+          <p class="storage-text">加载中...</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 侧边栏遮罩（移动端点击关闭用） -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+      <!-- 顶部栏 -->
+      <header class="topbar">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="menu-toggle" id="menuToggle" aria-label="菜单">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+          <div class="breadcrumb" id="breadcrumb">
+            <span class="breadcrumb-item">全部文件</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <div class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="searchInput" placeholder="搜索文件..." autocomplete="off">
+          </div>
+          <button class="btn btn-primary" id="newFolderBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            新建文件夹
+          </button>
+          <button class="btn btn-primary" id="uploadBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            上传文件
+          </button>
+        </div>
+      </header>
+
+      <!-- 拖拽上传区 -->
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-zone-content">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p>拖拽文件到此处上传到 Telegram 云盘</p>
+          <span>支持图片、视频、音频、文档，单文件最大 50MB</span>
+        </div>
+      </div>
+
+      <!-- 内容容器 -->
+      <div class="content-container" id="contentContainer">
+        <!-- 动态渲染 -->
+      </div>
+
+      <!-- 上传进度 -->
+      <div class="upload-progress-container" id="uploadProgressContainer" style="display:none">
+        <div class="upload-progress-header">
+          <span>上传进度</span>
+          <button class="btn-text" id="closeProgressBtn">关闭</button>
+        </div>
+        <div id="uploadProgressList"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 文件预览模态框 -->
+  <div class="modal" id="previewModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content preview-modal">
+      <button class="modal-close" id="closePreviewBtn">&times;</button>
+      <div id="previewContent"></div>
+    </div>
+  </div>
+
+  <!-- 新建文件夹模态框 -->
+  <div class="modal" id="folderModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <h3>新建文件夹</h3>
+      <input type="text" id="folderNameInput" placeholder="文件夹名称" autocomplete="off">
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelFolderBtn">取消</button>
+        <button class="btn btn-primary" id="confirmFolderBtn">创建</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 重命名模态框 -->
+  <div class="modal" id="renameModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <h3>重命名</h3>
+      <input type="text" id="renameInput" autocomplete="off">
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="cancelRenameBtn">取消</button>
+        <button class="btn btn-primary" id="confirmRenameBtn">确认</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MTProto 登录模态框 -->
+  <div class="modal" id="mtprotoLoginModal">
+    <div class="modal-overlay"></div>
+    <div class="modal-content" style="max-width:480px">
+      <div id="mtprotoLoginContent"></div>
+    </div>
+  </div>
+
+  <!-- 隐藏文件上传 input -->
+  <input type="file" id="fileInput" multiple style="display:none">
+
+  <!-- Toast 通知 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js?v=20260709"></script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Database (contains user data)
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+*.log
+cf_login_output.txt
+
+# Binaries (download separately)
+caddy.exe
+cloudflared.exe
+*.msi
+*.zip
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Cloudflared config
+.cert.pem
