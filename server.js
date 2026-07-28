@@ -1052,6 +1052,6 @@ app.listen(PORT, () => {
   console.log(`\n☁️  Telegram 云盘管理系统已启动（多用户模式）`);
   console.log(`   访问地址: http://localhost:${PORT}`);
   console.log(`   数据库: ${path.join(__dirname, 'data.db')}`);
-  console.log(`   默认管理员: admin / qwer1234`);
+  console.log(`   管理员: admin（密码由部署时设置，登录后可在页面修改）`);
   console.log('');
 });

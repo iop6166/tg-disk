@@ -142,17 +142,20 @@ const userStore = {
 };
 
 // 自动创建管理员账号（首次启动）
+// 默认管理员密码从环境变量 ADMIN_PASSWORD 读取；未设置时回退到一个非生产默认口令。
+// 注意：不要在此处硬编码真实口令，避免公开仓库泄露管理密码。部署时请通过环境变量设置强密码。
 function seedAdmin() {
+  const defaultAdminPassword = process.env.ADMIN_PASSWORD || 'tg-disk-admin';
   if (userStore.count() === 0) {
-    const admin = userStore.create('admin', 'qwer1234', true);
-    console.log('🔑 已创建默认管理员账号: admin / qwer1234（请尽快修改密码）');
+    const admin = userStore.create('admin', defaultAdminPassword, true);
+    console.log('🔑 已创建默认管理员账号: admin（密码取自环境变量 ADMIN_PASSWORD，未设置时为内置默认口令，请尽快登录修改）');
     return admin;
   }
   // 确保 admin 账号存在
   let admin = userStore.getByUsername('admin');
   if (!admin) {
-    admin = userStore.create('admin', 'qwer1234', true);
-    console.log('🔑 已补充管理员账号: admin / qwer1234');
+    admin = userStore.create('admin', defaultAdminPassword, true);
+    console.log('🔑 已补充管理员账号: admin（请使用首次部署时设置的密码登录）');
   }
   return admin;
 }
