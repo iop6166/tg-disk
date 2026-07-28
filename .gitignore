@@ -26,3 +26,7 @@ Thumbs.db
 
 # Cloudflared config
 .cert.pem
+
+# 个人部署用的反向代理配置（含部署者域名，不应进入公共仓库）
+Caddyfile
+Caddyfile*

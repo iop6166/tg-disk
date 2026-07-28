@@ -53,14 +53,24 @@
 
 ---
 
+## 🔒 关于实例隔离（可多人独立部署）
+
+本系统**不依赖任何中心服务器或共享账号**。代码里没有任何写死的 Telegram 凭据或域名，所有配置（Bot Token、频道、MTProto 登录态、用户账号）都只保存在部署者自己服务器上的本地数据库 `data.db` 中。
+
+因此：
+
+- **每个人 clone 本项目自行部署，就是一个完全独立的实例**——文件存在他自己的 Telegram 频道里，账号、配置、文件元数据全在他的 `data.db` 里，与任何其他部署者（包括作者）**零关联、零共享**。
+- 作者自己的线上实例（`http://66.63.182.165:44443`）与你部署的实例互不影响。
+- 非常适合作者的使用场景：**把代码发给朋友，让他装在自己服务器上自用**，彼此数据完全隔离。
+
 ## 🚀 操作方式
 
 ### 第一步：安装
 
 ```bash
 # 克隆项目
-git clone https://github.com/你的用户名/telegram-cloud-drive.git
-cd telegram-cloud-drive
+git clone https://github.com/iop6166/tg-disk.git
+cd tg-disk
 
 # 安装依赖
 npm install
@@ -73,6 +83,20 @@ node --experimental-sqlite server.js
 ```
 
 服务器启动后监听 `http://localhost:3000`
+
+### 默认管理员账号
+
+首次启动会自动创建管理员账号：
+
+| 用户名 | 密码 | 说明 |
+|--------|------|------|
+| `admin` | `tg-disk-admin` | 内置默认口令（未设置环境变量时） |
+
+> ⚠️ **安全提示**：部署后请立即在「设置 → 账号安全」中修改默认密码。
+> 也可在首次启动前通过环境变量自定义默认口令（更安全，且不会写死在代码里）：
+> ```bash
+> ADMIN_PASSWORD='你的强密码' node --experimental-sqlite server.js
+> ```
 
 ### 第三步：配置 Bot API
 
@@ -162,7 +186,6 @@ telegram-cloud-drive/
 ├── start.bat          # 启动脚本（含崩溃重启）
 ├── stop.bat           # 停止脚本
 ├── autostart.vbs      # 静默启动脚本
-├── Caddyfile          # Caddy 反向代理配置（备用方案）
 ├── package.json
 ├── .gitignore
 ├── LICENSE

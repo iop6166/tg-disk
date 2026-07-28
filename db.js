@@ -136,6 +136,11 @@ const userStore = {
     if (!verifyPassword(password, user.password_hash, user.salt)) return null;
     return user;
   },
+  setPassword(userId, password) {
+    const { hash, salt } = hashPassword(password);
+    db.prepare('UPDATE users SET password_hash = ?, salt = ? WHERE id = ?').run(hash, salt, userId);
+    return true;
+  },
   count() {
     return db.prepare('SELECT COUNT(*) as count FROM users').get().count;
   }

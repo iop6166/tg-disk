@@ -231,6 +231,24 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// 修改密码（需登录，且验证原密码）
+app.post('/api/auth/change-password', auth.requireAuth, (req, res) => {
+  const { oldPassword, newPassword } = req.body || {};
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ error: '原密码和新密码不能为空' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: '新密码至少 6 个字符' });
+  }
+  // 二次验证原密码
+  const user = userStore.verify(req.user.username, oldPassword);
+  if (!user) {
+    return res.status(401).json({ error: '原密码错误' });
+  }
+  userStore.setPassword(req.user.id, newPassword);
+  res.json({ success: true });
+});
+
 app.get('/api/auth/me', auth.requireAuth, (req, res) => {
   res.json({
     user: {

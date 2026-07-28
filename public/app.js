@@ -518,6 +518,21 @@ async function loadSettingsView() {
         </div>
       </div>
 
+      <div class="settings-section">
+        <h3>账号安全</h3>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">首次登录后请尽快修改默认密码（默认管理员账号为 admin）</p>
+        <div class="form-group">
+          <label>原密码</label>
+          <input type="password" id="oldPasswordInput" placeholder="当前密码">
+        </div>
+        <div class="form-group">
+          <label>新密码</label>
+          <input type="password" id="newPasswordInput" placeholder="至少 6 位">
+        </div>
+        <button class="btn btn-primary" onclick="changePassword()">保存新密码</button>
+        <span id="changePwMsg" style="margin-left:10px;font-size:13px"></span>
+      </div>
+
       <div class="settings-section" id="systemSettingsSection">
         <h3>系统设置</h3>
         <div class="autostart-row" id="autostartRow">
@@ -542,6 +557,29 @@ async function loadSettingsView() {
   if (!state.currentUser || !state.currentUser.is_admin) {
     const sysSec = document.getElementById('systemSettingsSection');
     if (sysSec) sysSec.style.display = 'none';
+  }
+}
+
+async function changePassword() {
+  const oldP = document.getElementById('oldPasswordInput');
+  const newP = document.getElementById('newPasswordInput');
+  const msg = document.getElementById('changePwMsg');
+  if (!oldP || !newP) return;
+  msg.textContent = '';
+  msg.style.color = 'var(--text-muted)';
+  try {
+    await api('/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ oldPassword: oldP.value, newPassword: newP.value })
+    });
+    msg.textContent = '✅ 密码已更新';
+    msg.style.color = '#2e7d32';
+    oldP.value = '';
+    newP.value = '';
+  } catch (e) {
+    msg.textContent = '❌ ' + e.message;
+    msg.style.color = '#c62828';
   }
 }
 
