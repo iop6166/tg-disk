@@ -22,7 +22,92 @@ const state = {
   fileSelectedIds: new Set(),
   fileSelectMode: false,
   fileClipboard: { mode: null, ids: [] },
+  currentUser: null,
 };
+
+// ============ 认证 ============
+async function checkAuth() {
+  try {
+    const me = await api('/auth/me');
+    state.currentUser = me.user;
+    enterApp();
+  } catch {
+    showAuthScreen();
+  }
+}
+
+function showAuthScreen() {
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('userBadge').style.display = 'none';
+}
+
+function enterApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  const badge = document.getElementById('userBadge');
+  badge.style.display = 'flex';
+  document.getElementById('userBadgeName').textContent =
+    state.currentUser.username + (state.currentUser.is_admin ? ' (管理员)' : '');
+  loadView();
+  updateStorageInfo();
+}
+
+function showAuthTab(mode) {
+  document.getElementById('loginTab').classList.toggle('active', mode === 'login');
+  document.getElementById('registerTab').classList.toggle('active', mode === 'register');
+  document.getElementById('loginForm').style.display = mode === 'login' ? '' : 'none';
+  document.getElementById('registerForm').style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('authError').textContent = '';
+}
+
+async function login() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
+  document.getElementById('authError').textContent = '';
+  if (!username || !password) {
+    document.getElementById('authError').textContent = '请输入用户名和密码';
+    return;
+  }
+  try {
+    const me = await api('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    state.currentUser = me.user;
+    enterApp();
+  } catch (e) {
+    document.getElementById('authError').textContent = e.message;
+  }
+}
+
+async function register() {
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value.trim();
+  document.getElementById('authError').textContent = '';
+  if (!username || !password) {
+    document.getElementById('authError').textContent = '请输入用户名和密码';
+    return;
+  }
+  try {
+    const me = await api('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    state.currentUser = me.user;
+    enterApp();
+  } catch (e) {
+    document.getElementById('authError').textContent = e.message;
+  }
+}
+
+async function logout() {
+  try { await api('/auth/logout', { method: 'POST' }); } catch {}
+  state.currentUser = null;
+  showAuthScreen();
+}
 
 // ============ 工具函数 ============
 const API = '/api';
@@ -350,7 +435,7 @@ async function loadStatsView() {
 }
 
 async function loadSettingsView() {
-  const settings = await api('/settings');
+  const settings = await api('/user/config');
   state.configured = settings.configured;
   const container = document.getElementById('contentContainer');
   // 隐藏拖拽区
@@ -433,7 +518,7 @@ async function loadSettingsView() {
         </div>
       </div>
 
-      <div class="settings-section">
+      <div class="settings-section" id="systemSettingsSection">
         <h3>系统设置</h3>
         <div class="autostart-row" id="autostartRow">
           <div class="autostart-info">
@@ -453,12 +538,17 @@ async function loadSettingsView() {
   loadMtprotoStatus();
   // 异步加载自启动状态
   loadAutostartStatus();
+  // 非管理员隐藏「系统设置」（开机自启动仅管理员可用）
+  if (!state.currentUser || !state.currentUser.is_admin) {
+    const sysSec = document.getElementById('systemSettingsSection');
+    if (sysSec) sysSec.style.display = 'none';
+  }
 }
 
 // ============ MTProto 频道浏览 ============
 async function checkMtprotoStatus() {
   try {
-    const data = await api('/mtproto/status');
+    const data = await api('/user/mtproto/status');
     state.mtprotoConnected = data.connected;
     state.mtprotoUser = data.user;
     return data;
@@ -536,9 +626,9 @@ async function loadChannelFiles() {
   try {
     let result;
     if (state.channelSearchQuery) {
-      result = await api(`/mtproto/channel/search?q=${encodeURIComponent(state.channelSearchQuery)}&offset=${state.channelOffset}`);
+      result = await api(`/user/mtproto/channel/search?q=${encodeURIComponent(state.channelSearchQuery)}&offset=${state.channelOffset}`);
     } else {
-      result = await api(`/mtproto/channel/files?offset=${state.channelOffset}`);
+      result = await api(`/user/mtproto/channel/files?offset=${state.channelOffset}`);
     }
 
     state.channelFiles = state.channelOffset === 0 ? result.files : [...state.channelFiles, ...result.files];
@@ -602,7 +692,7 @@ function renderChannelFiles() {
     let thumbHtml = '';
     if (file.has_thumb) {
       const playOverlay = file.file_type === 'video' ? '<div class="thumb-play">▶</div>' : '';
-      thumbHtml = `<div class="file-thumb"><img src="${API}/mtproto/channel/thumb/${file.message_id}" alt="${safeName}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'file-icon\\'>${getFileIcon(file)}</div>'">${playOverlay}</div>`;
+      thumbHtml = `<div class="file-thumb"><img src="${API}/user/mtproto/channel/thumb/${file.message_id}" alt="${safeName}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'file-icon\\'>${getFileIcon(file)}</div>'">${playOverlay}</div>`;
     } else {
       thumbHtml = `<div class="file-icon">${getFileIcon(file)}</div>`;
     }
@@ -651,7 +741,7 @@ async function downloadChannelFile(messageId) {
   const mime = file ? encodeURIComponent(file.mime_type || '') : '';
   const name = file ? encodeURIComponent(file.name || '') : '';
   toast('开始下载...', 'info');
-  window.location.href = `${API}/mtproto/channel/download/${messageId}?mime=${mime}&name=${name}`;
+  window.location.href = `${API}/user/mtproto/channel/download/${messageId}?mime=${mime}&name=${name}`;
 }
 
 // ============ 频道文件管理 ============
@@ -661,7 +751,7 @@ async function deleteChannelFile(messageId) {
   const name = file ? file.name : '此文件';
   if (!confirm(`确定删除「${name}」？此操作不可恢复。`)) return;
   try {
-    await api(`/mtproto/channel/files/${messageId}`, { method: 'DELETE' });
+    await api(`/user/mtproto/channel/files/${messageId}`, { method: 'DELETE' });
     toast('文件已删除', 'success');
     // 从列表中移除
     state.channelFiles = state.channelFiles.filter(f => f.message_id !== messageId);
@@ -677,7 +767,7 @@ async function renameChannelFile(messageId) {
   const newName = prompt('输入新名称:', file.name);
   if (!newName || newName === file.name) return;
   try {
-    await api(`/mtproto/channel/files/${messageId}`, {
+    await api(`/user/mtproto/channel/files/${messageId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: newName })
@@ -742,7 +832,7 @@ async function channelPaste() {
   if (!confirm(`确定${modeText}粘贴 ${state.channelClipboard.ids.length} 个文件？`)) return;
 
   try {
-    await api('/mtproto/channel/forward', {
+    await api('/user/mtproto/channel/forward', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -775,7 +865,7 @@ async function channelDeleteSelected() {
   try {
     for (const messageId of state.channelSelectedIds) {
       try {
-        await api(`/mtproto/channel/files/${messageId}`, { method: 'DELETE' });
+        await api(`/user/mtproto/channel/files/${messageId}`, { method: 'DELETE' });
       } catch (err) {
         console.warn('删除失败:', messageId, err.message);
       }
@@ -804,9 +894,9 @@ async function previewChannelFile(messageId) {
   }
 
   const mime = encodeURIComponent(file.mime_type || '');
-  const previewUrl = `${API}/mtproto/channel/preview/${messageId}?mime=${mime}`;
+  const previewUrl = `${API}/user/mtproto/channel/preview/${messageId}?mime=${mime}`;
   // 视频和音频使用 stream 端点（支持 Range 请求，可拖动播放）
-  const streamUrl = `${API}/mtproto/channel/stream/${messageId}?mime=${mime}`;
+  const streamUrl = `${API}/user/mtproto/channel/stream/${messageId}?mime=${mime}`;
   let html = '';
 
   if (file.file_type === 'photo') {
@@ -872,7 +962,7 @@ async function saveMtprotoConfig() {
   }
 
   try {
-    await api('/mtproto/config', {
+    await api('/user/mtproto/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ api_id: apiId, api_hash: apiHash })
@@ -888,7 +978,7 @@ async function loadMtprotoStatus() {
   const box = document.getElementById('mtprotoStatusBox');
   if (!box) return;
   try {
-    const status = await api('/mtproto/status');
+    const status = await api('/user/mtproto/status');
     if (status.logged_in && status.user) {
       const name = [status.user.firstName, status.user.lastName].filter(Boolean).join(' ');
       box.innerHTML = `
@@ -930,7 +1020,7 @@ async function saveMtprotoConfigAndLogin() {
   }
 
   try {
-    await api('/mtproto/config', {
+    await api('/user/mtproto/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ api_id: apiId, api_hash: apiHash })
@@ -976,7 +1066,7 @@ async function sendMtprotoCode() {
   content.innerHTML = '<div class="loading"><div class="spinner"></div>发送验证码中...</div>';
 
   try {
-    await api('/mtproto/send-code', {
+    await api('/user/mtproto/send-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone_number: phone })
@@ -1014,7 +1104,7 @@ async function verifyMtprotoCode() {
   content.innerHTML = '<div class="loading"><div class="spinner"></div>验证中...</div>';
 
   try {
-    const result = await api('/mtproto/verify-code', {
+    const result = await api('/user/mtproto/verify-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code })
@@ -1060,7 +1150,7 @@ async function verifyMtproto2FA() {
   content.innerHTML = '<div class="loading"><div class="spinner"></div>验证中...</div>';
 
   try {
-    const result = await api('/mtproto/verify-2fa', {
+    const result = await api('/user/mtproto/verify-2fa', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password })
@@ -1088,7 +1178,7 @@ async function verifyMtproto2FA() {
 async function mtprotoLogout() {
   if (!confirm('确定退出 Telegram 登录？退出后需重新输入验证码登录。')) return;
   try {
-    await api('/mtproto/logout', { method: 'POST' });
+    await api('/user/mtproto/logout', { method: 'POST' });
     toast('已退出登录', 'success');
     state.mtprotoConnected = false;
     state.mtprotoUser = null;
@@ -1521,7 +1611,7 @@ async function saveSettings(forceSave) {
   body.api_root = apiRoot;
 
   try {
-    const resp = await api('/settings', {
+    const resp = await api('/user/config', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -1719,7 +1809,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // 初始加载
-  loadView();
-  updateStorageInfo();
+  // 初始加载（先检查登录状态）
+  checkAuth();
 });

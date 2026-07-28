@@ -4,11 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
   <title>Telegram 云盘管理系统</title>
-  <link rel="stylesheet" href="style.css?v=20260709">
+  <link rel="stylesheet" href="style.css?v=20260728">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☁️</text></svg>">
 </head>
 <body>
-  <div id="app">
+  <!-- 登录 / 注册界面 -->
+  <div id="authScreen" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">☁️</div>
+      <h2 class="auth-title">TG 云盘</h2>
+      <p class="auth-sub">登录以访问你的 Telegram 云盘</p>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="loginTab" onclick="showAuthTab('login')">登录</button>
+        <button class="auth-tab" id="registerTab" onclick="showAuthTab('register')">注册</button>
+      </div>
+      <div id="loginForm">
+        <input type="text" id="loginUsername" placeholder="用户名" autocomplete="username">
+        <input type="password" id="loginPassword" placeholder="密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+        <button class="btn btn-primary auth-btn" onclick="login()">登录</button>
+      </div>
+      <div id="registerForm" style="display:none">
+        <input type="text" id="regUsername" placeholder="用户名（至少3位）" autocomplete="username">
+        <input type="password" id="regPassword" placeholder="密码（至少6位）" autocomplete="new-password" onkeydown="if(event.key==='Enter')register()">
+        <button class="btn auth-btn" onclick="register()" style="background:var(--primary);color:#fff">注册并登录</button>
+      </div>
+      <div id="authError" class="auth-error"></div>
+    </div>
+  </div>
+
+  <div id="app" style="display:none">
     <!-- 侧边栏 -->
     <aside class="sidebar">
       <div class="sidebar-header">
@@ -77,6 +101,10 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             上传文件
           </button>
+          <div class="user-badge" id="userBadge" style="display:none">
+            <span id="userBadgeName"></span>
+            <button class="btn btn-secondary" style="padding:4px 10px;font-size:12px" onclick="logout()">退出</button>
+          </div>
         </div>
       </header>
 
@@ -154,6 +182,6 @@
   <!-- Toast 通知 -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="app.js?v=20260709"></script>
+  <script src="app.js?v=20260728"></script>
 </body>
 </html>
